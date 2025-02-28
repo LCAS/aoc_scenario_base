@@ -2,34 +2,33 @@ ARG BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
 
 ############################################################################################################
 FROM ${BASE_IMAGE} AS base
+ARG BASE_IMAGE
+ENV BASE_IMAGE=${BASE_IMAGE}
+
 LABEL org.opencontainers.image.authors="Agri-OpenCore Consortium" \
       org.opencontainers.image.licenses="Apache 2.0, MIT, others" \
       org.opencontainers.image.vendor="Agri-OpenCore Consortium" \
-      org.opencontainers.image.title="Agri-OpenCore Strawberry Scenario ROS 2 Workspace" \
-      org.opencontainers.image.description="This image is used to build the Agri-OpenCore Strawberry Scenario ROS 2 workspace." \
-      org.opencontainers.image.url="https://github.com/LCAS/aoc_strawberry_scenario" \
-      org.opencontainers.image.documentation="https://github.com/LCAS/aoc_strawberry_scenario" \
-      org.opencontainers.image.source="https://github.com/LCAS/aoc_strawberry_scenario" \
+      org.opencontainers.image.title="Agri-OpenCore Base Scenario ROS 2 Workspace" \
+      org.opencontainers.image.description="This image is used to build the Agri-OpenCore Base Scenario ROS 2 workspace." \
+      org.opencontainers.image.url="https://github.com/LCAS/aoc_scenario_base" \
+      org.opencontainers.image.documentation="https://github.com/LCAS/aoc_scenario_base" \
+      org.opencontainers.image.source="https://github.com/LCAS/aoc_scenario_base" \
       uk.ac.lincoln.lcas.maintainer="Ibrahim Hroob <ihroob@lincoln.ac.uk>" \
       uk.ac.lincoln.lcas.affiliation="University of Lincoln, Lincoln Centre for Autonomous Systems" \
-      uk.ac.lincoln.lcas.description="This image is used to build the AOC Strawberry Scenario ROS 2 workspace." \
+      uk.ac.lincoln.lcas.description="This image is used to build the AOC Base Scenario ROS 2 workspace." \
       uk.ac.lincoln.lcas.base_image=${BASE_IMAGE}
 
 USER root
 
 #change this to ARG https://docs.docker.com/reference/dockerfile/#env
 #If an environment variable is only needed during build, and not in the final image
-ARG DEBIAN_FRONTEND=noninteractive
-ENV ROS_DISTRO=humble
-
-ARG COLCON_WS=/home/ros/aoc_strawberry_scenario_ws
-ENV COLCON_WS=${COLCON_WS}
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install all required APT packages
-#INCLUDE .devcontainer/docker/ros2/apt_install.dockerfile
+#INCLUDE docker/apt_install.dockerfile
 RUN apt update && apt upgrade -y && \
     apt install -y \
-    ros-humble-desktop \
+    ros-${ROS_DISTRO}-desktop \
     ros-${ROS_DISTRO}-gazebo-* \
     ros-${ROS_DISTRO}-navigation2 \
     ros-${ROS_DISTRO}-gazebo-ros-pkgs \
@@ -149,19 +148,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install pymongo
 RUN python3 -m pip install pymongo
 
-
-# TOPONAV editor tool
-RUN pip install --upgrade matplotlib pybind11
-COPY --link .devcontainer/docker/ros2/script/toponav_editor.desktop /home/ros/Desktop/
-RUN chmod +x /home/ros/Desktop/toponav_editor.desktop
-
-
-# DDS configurations are copied to the /etc/sysctl.d directory, and udev rules are copied to the /etc/udev/rules.d directory.
-COPY --link .devcontainer/docker/ros2/config/dds_configs/10-cyclone-max.conf /etc/sysctl.d/10-cyclone-max.conf
-COPY --link .devcontainer/docker/ros2/config/udev_configs/49-hardware_info_set.rules /etc/udev/rules.d/49-hardware_info_set.rules
-
 # Install extra libraries via script
-COPY --link .devcontainer/docker/ros2/script/install_extra_libs.sh /opt/src/scripts/install_extra_libs.sh
+COPY --link docker/script/install_extra_libs.sh /opt/src/scripts/install_extra_libs.sh
 RUN chmod +x /opt/src/scripts/install_extra_libs.sh && \
     /bin/bash -c '/opt/src/scripts/install_extra_libs.sh'
 
@@ -179,7 +167,7 @@ ENV GIT_LFS_SKIP_SMUDGE=1
 RUN sudo chmod -R o+r+w+X,g+r+w+X /opt/venv
 ENV USER=ros
 USER $USER
-#INCLUDE .devcontainer/docker/ros2/zed.dockerfile
+#INCLUDE docker/zed.dockerfile
 RUN nvidia-smi || echo "::warning title=ZED installation::No nvidia-smi found, build environment not with CUDA runtime. ZED SDK will be installed with stubs" 
 
 ENV OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
@@ -198,6 +186,8 @@ ENV LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 
 # fix permission for zed installation
 RUN sudo chmod -R +r+X /usr/local/
+RUN sudo chmod -R o+r+w+X,g+r+w+X /opt/venv
+
 
 USER root
 
@@ -208,7 +198,7 @@ USER root
 # ARG ROBOT_PLATFORM=dogtooth_platform
 # ENV ROBOT_PLATFORM=${ROBOT_PLATFORM}
 
-# COPY --link .devcontainer/docker/ros2/script/install_extra_libs_hardware_specific.sh /opt/src/scripts/install_extra_libs_hardware_specific.sh
+# COPY --link docker/script/install_extra_libs_hardware_specific.sh /opt/src/scripts/install_extra_libs_hardware_specific.sh
 # RUN chmod +x /opt/src/scripts/install_extra_libs_hardware_specific.sh && \
 #     /bin/bash -c '/opt/src/scripts/install_extra_libs_hardware_specific.sh ${ROBOT_PLATFORM}'
 
@@ -225,64 +215,20 @@ RUN chown -R $USER:$USER ${COLCON_WS}
 
 ############################################################################################################
 FROM base AS user_space
-ARG AOC_SERVICE_DIR=${COLCON_WS}/src/aoc_strawberry_scenario
-ENV AOC_SERVICE_DIR=${AOC_SERVICE_DIR}
-ARG ROBOT_PLATFORM=dogtooth_platform
-ENV ROBOT_PLATFORM=${ROBOT_PLATFORM}
 
 # switch to the user now
 USER $USER
 
 # tmule configs
-ARG ROBOT_PLATFORM_TMULE=${AOC_SERVICE_DIR}/aoc_strawberry_scenario_bringup/tmule/tmule_config/robots/${ROBOT_PLATFORM}
-ENV ROBOT_PLATFORM_TMULE=${ROBOT_PLATFORM_TMULE}
-
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
     echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc && \
-    echo "export _colcon_cd_root=${COLCON_WS}" >> ~/.bashrc && \
-    echo "source ${COLCON_WS}/install/setup.bash" >> ~/.bashrc
-
-RUN echo "source ${ROBOT_PLATFORM_TMULE}/init_cmd_setup_${ROBOT_PLATFORM}.sh" >> ~/.bashrc && \
-    echo "alias aoc_strawberry_scenario_tmule_cd='cd ${ROBOT_PLATFORM_TMULE}/'" >> ~/.bashrc && \
-    echo "alias aoc_strawberry_scenario_tmule_exec='tmule -c ${ROBOT_PLATFORM_TMULE}/aoc_strawberry_scenario_${ROBOT_PLATFORM}.yaml launch'" >> ~/.bashrc
 
 # common aliases
-RUN echo "alias simulated_robot='ros2 launch aoc_strawberry_scenario_bringup robot_with_world_sim.launch.py'" >> ~/.bashrc && \
-    echo "alias zenoh='zenoh-bridge-ros2dds -c /home/ros/aoc_strawberry_scenario_ws/src/aoc_strawberry_scenario/.devcontainer/docker/ros2/config/dds_configs/zenoh_client_config.json5'" >>  ~/.bashrc && \
-    echo "alias navigation='ros2 launch aoc_strawberry_scenario_bringup navigation_ekf_gps.launch.py'" >> ~/.bashrc && \
-    echo "alias topo_nav='ros2 launch aoc_strawberry_scenario_bringup topological_nav.launch.py'" >> ~/.bashrc && \
-    echo "alias topo_nav_real='ros2 launch aoc_strawberry_scenario_bringup topological_nav.launch.py use_sim_time:=False'" >> ~/.bashrc && \
-    echo "alias navigation_without_rviz='ros2 launch aoc_strawberry_scenario_bringup navigation_ekf_gps.launch.py use_rviz:=False'" >> ~/.bashrc && \
-    echo "alias scenario_viz='ros2 launch aoc_strawberry_scenario_bringup rviz_launch.py'" >> ~/.bashrc && \
-    echo "alias scenario_viz_real='ros2 launch aoc_strawberry_scenario_bringup rviz_launch.py use_sim_time:=False'" >> ~/.bashrc && \
-    echo "alias navigation_real_robot='ros2 launch aoc_strawberry_scenario_bringup navigation_ekf_gps.launch.py use_sim_time:=False use_rviz:=False'" >> ~/.bashrc && \
-    echo "alias set_usb_permission='sudo chmod -R 777 /dev/bus/usb/'" >> ~/.bashrc && \
-    echo "alias share_internet='bash ${AOC_SERVICE_DIR}/.devcontainer/docker/ros2/config/network_config/sharing_internet.sh'" >> ~/.bashrc && \
-    echo "alias real_robot='ros2 launch aoc_strawberry_scenario_bringup robot_with_world_real.launch.py'" >> ~/.bashrc && \
-    echo "alias post_create='bash ${AOC_SERVICE_DIR}/.devcontainer/docker/ros2/script/post_create.sh'" >> ~/.bashrc && \
-    echo "alias startup='bash ${AOC_SERVICE_DIR}/.devcontainer/docker/ros2/script/startup.sh'" >> ~/.bashrc && \
-    echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.bashrc && \
+RUN echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.bashrc && \
     echo "export GAZEBO_MASTER_URI=http://127.0.0.0:21345" >> ~/.bashrc && \
     echo "export GAZEBO_IP=127.0.0.0" >> ~/.bashrc && \
     echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc && \
     echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
 
-
-# Create the workspace directory and copy the repos into it
-RUN mkdir -p ${COLCON_WS}/src/
-WORKDIR ${COLCON_WS}/src/
-
-# make sure again that it's writeable
-RUN sudo chmod -R o+r+w+X,g+r+w+X /opt/venv
-
 # default to bash
 CMD ["/bin/bash"]
-
-FROM user_space AS deps_installed
-
-RUN --mount=type=bind,target=/tmp/source-tree \
-    rosdep update --rosdistro ${ROS_DISTRO} && \
-    rosdep install --from-paths /tmp/source-tree --ignore-src --rosdistro ${ROS_DISTRO} -y
-
-
-

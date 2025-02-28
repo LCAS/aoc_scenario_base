@@ -1,1 +1,0 @@
-KERNEL=="ttyUSB[0-9]*", ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="ttyIMU"

@@ -3,11 +3,11 @@ name: Build Docker images
 on:
   workflow_dispatch:
   push:
-    branches: [ humble_dev ]
+    branches: [ main ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ humble_dev ]
+    branches: [ main ]
 
 # Controls concurrent execution of workflow
 # Ensures only one workflow per branch/ref runs at a time
@@ -22,7 +22,6 @@ jobs:
     if: github.repository_owner == 'LCAS'
     runs-on: 
       - lcas
-      - cuda # ZED required a cuda build enironment
 
     steps:
     - name: Node Js
@@ -52,7 +51,6 @@ jobs:
       with:
         flavor: |
           latest=auto
-          prefix=base-,onlatest=true
         # list of Docker images to use as base name for tags
         images: |
           lcas.lincoln.ac.uk/${{ steps.repo_slug.outputs.result }}
@@ -79,270 +77,17 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: .devcontainer/docker/ros2/Dockerfile
+        file: docker/Dockerfile
         platforms: linux/amd64
         push: true
         load: true
         cache-from: |
           ${{ steps.meta_base.outputs.tags }}
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:base
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:hunter_platform
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:dogtooth_platform
-
-        cache-to: type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:base,mode=max
+          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:latest
+        cache-to: type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:latest,mode=max
         tags: ${{ steps.meta_base.outputs.tags }}
         labels: ${{ steps.meta_base.outputs.labels }}
-        target: base
+        target: user_space
         build-args: |
           BUILDKIT_INLINE_CACHE=1
           BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
-
-
-  # Workflow job to build a Docker image
-  # This job handles the containerization process by creating a Docker image from the project
-  build-docker-image:
-    needs: build-base-image
-    if: github.repository_owner == 'LCAS'
-    runs-on: 
-      - lcas
-      - cuda # ZED required a cuda build enironment
-    strategy:
-      fail-fast: true
-      # Matrix configuration for Docker image builds
-      # Defines build configurations for platforms
-      matrix:
-        include:
-          - base_image: lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
-            ros_distro: humble
-            robot_platform: hunter_platform
-          - base_image: lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
-            ros_distro: humble
-            robot_platform: dogtooth_platform
-  
-    steps:
-    - name: Node Js
-      uses: actions/setup-node@v4
-      with:
-        node-version: "^16.13.0 || >=18.0.0"
-    # - uses: de-vri-es/setup-git-credentials@v2
-    #   with:
-    #     credentials: ${{ secrets.LCAS_GITHUB_CREDENTIALS }}
-
-    - name: Sanitize repo slug
-      uses: actions/github-script@v6
-      id: repo_slug
-      with:
-        result-encoding: string
-        script: return '${{ github.repository }}'.toLowerCase()
-    - uses: AutoModality/action-clean@v1      
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-        submodules: 'recursive'
-        token: ${{ secrets.ORGA_GH_TOKEN }}
-
-    - name: Docker Login LCAS
-      uses: docker/login-action@v3
-      with:
-        registry: lcas.lincoln.ac.uk
-        username: ${{ secrets.LCAS_REGISTRY_PUSHER }}
-        password: ${{ secrets.LCAS_REGISTRY_TOKEN }}
-
-    - name: Docker meta
-      id: meta_public
-      uses: docker/metadata-action@v5
-      with:
-        flavor: |
-          latest=false
-        # list of Docker images to use as base name for tags
-        images: |
-          lcas.lincoln.ac.uk/${{ steps.repo_slug.outputs.result }}
-        # generate Docker tags based on the following events/attributes
-        labels: |
-          org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.base=${{ matrix.base_image }}
-          maintainer=AOC
-          com.github.workflow.runner.name=${{ runner.name }}
-          com.github.workflow.runner.os=${{ runner.os }}
-          com.github.workflow.runner.arch=${{ runner.arch }}
-          com.github.workflow.run_id=${{ github.run_id }}
-          com.github.workflow.name=${{ github.workflow }}
-          org.ros.distro=${{ matrix.ros_distro }}
-          uk.ac.lincoln.lcas.robot_platform=${{ matrix.robot_platform }}
-        tags: |
-          type=raw,value=${{ matrix.robot_platform }},enable=${{ github.event_name != 'pull_request' }}
-          type=raw,value=${{ matrix.robot_platform }}-staging
-          type=ref,event=branch,prefix=${{ matrix.robot_platform }}-,enable=${{ github.event_name != 'pull_request' }}
-          type=semver,pattern={{version}},prefix=${{ matrix.robot_platform }}-
-          type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.robot_platform }}-
-          type=semver,pattern={{major}},prefix=${{ matrix.robot_platform }}-
-          type=raw,value=${{ matrix.robot_platform }}-latest-pr,enable=${{ github.event_name == 'pull_request' }}
-
-    - name: Build public Docker Image
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: .devcontainer/docker/ros2/Dockerfile
-        platforms: linux/amd64
-        push: true
-        load: true
-        cache-from: |
-          ${{ steps.meta_public.outputs.tags }}
-          lcas.lincoln.ac.uk/${{ steps.repo_slug.outputs.result }}:base
-          lcas.lincoln.ac.uk/${{ steps.repo_slug.outputs.result }}:base-staging
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:base
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:hunter_platform
-          type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:dogtooth_platform
-        cache-to: type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:${{ matrix.robot_platform }},mode=max
-        tags: ${{ steps.meta_public.outputs.tags }}
-        labels: ${{ steps.meta_public.outputs.labels }}
-        build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            BASE_IMAGE=${{ matrix.base_image }}
-            ROS_DISTRO=${{ matrix.ros_distro }}
-            ROBOT_PLATFORM=${{ matrix.robot_platform }}
-
-
-    - name: Docker meta_private
-      id: meta_private
-      uses: docker/metadata-action@v5
-      with:
-        flavor: |
-          latest=false
-        # list of Docker images to use as base name for tags
-        images: |
-          aoccr.zrok.lcas.group/${{ steps.repo_slug.outputs.result }}
-        # generate Docker tags based on the following events/attributes
-        tags: |
-          type=raw,value=${{ matrix.robot_platform }},enable=${{ github.event_name != 'pull_request' }}
-          type=raw,value=${{ matrix.robot_platform }}-staging
-          type=ref,event=branch,prefix=${{ matrix.robot_platform }}-,enable=${{ github.event_name != 'pull_request' }}
-          type=semver,pattern={{version}},prefix=${{ matrix.robot_platform }}-
-          type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.robot_platform }}-
-          type=semver,pattern={{major}},prefix=${{ matrix.robot_platform }}-
-
-            
-    - name: Docker Login AOC
-      uses: docker/login-action@v3
-      with:
-        registry: aoccr.zrok.lcas.group
-        username: ${{ secrets.AOC_REGISTRY_PUSHER }}
-        password: ${{ secrets.AOC_REGISTRY_TOKEN }}
-
-    # -  name: Set up Docker Buildx
-    #    uses: docker/setup-buildx-action@v3
-
-
-    # Build and push a private Docker image using docker/build-push-action
-    # This step:
-    # - Pushes the image to a private registry
-    # - Implements caching strategy using both the target tags and a dedicated cache registry
-    # - Uses build arguments for customization (BASE_IMAGE, ROS_DISTRO, ROBOT_PLATFORM)
-    # - Targets a specific build stage named 'private'
-    - name: Build private Docker Image
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: .devcontainer/docker/ros2/Dockerfile.private
-        platforms: linux/amd64
-        push: true
-        cache-from: |
-          ${{ steps.meta_private.outputs.tags }}
-          type=registry,ref=aoccr.zrok.lcas.group/cache/${{ steps.repo_slug.outputs.result }}:${{ matrix.robot_platform }}
-        cache-to: type=registry,ref=aoccr.zrok.lcas.group/cache/${{ steps.repo_slug.outputs.result }}:${{ matrix.robot_platform }},mode=max
-        tags: ${{ steps.meta_private.outputs.tags }}
-        labels: ${{ steps.meta_private.outputs.labels }}
-
-        build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            BASE_IMAGE=lcas.lincoln.ac.uk/${{ steps.repo_slug.outputs.result }}:${{ matrix.robot_platform }}-staging
-            ROS_DISTRO=${{ matrix.ros_distro }}
-            ROBOT_PLATFORM=${{ matrix.robot_platform }}
-
-  build-dev-containers:
-    needs: build-docker-image
-    if: github.repository_owner == 'LCAS'
-    runs-on: lcas
-    strategy:
-      matrix:
-        platform: [hunter, dogtooth]
-        environment: [physical, simulation]
-
-        # include:
-        #   - configFile: .devcontainer/physical_dogtooth/devcontainer.json
-        #     platform: dogtooth
-        #     environment: physical
-        #   - configFile: .devcontainer/physical_hunter/devcontainer.json
-        #     imageTag: physical_hunter
-        #   - configFile: .devcontainer/simulation_dogtooth/devcontainer.json
-        #     imageTag: simulation_dogtooth
-        #   - configFile: .devcontainer/simulation_hunter/devcontainer.json
-        #     imageTag: simulation_hunter
-    steps:
-      - name: Node Js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "^16.13.0 || >=18.0.0"
-      - name: Sanitize repo slug
-        uses: actions/github-script@v6
-        id: repo_slug
-        with:
-          result-encoding: string
-          script: return '${{ github.repository }}'.toLowerCase()
-      - uses: AutoModality/action-clean@v1    
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          submodules: 'recursive'
-          token: ${{ secrets.ORGA_GH_TOKEN }}
-
-      - name: Docker Login LCAS
-        uses: docker/login-action@v3
-        with:
-          registry: lcas.lincoln.ac.uk
-          username: ${{ secrets.LCAS_REGISTRY_PUSHER }}
-          password: ${{ secrets.LCAS_REGISTRY_TOKEN }}
-      - name: Docker Login dockerhub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Docker meta
-        id: docker_meta
-        uses: docker/metadata-action@v5
-        with:
-          # list of Docker images to use as base name for tags
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=raw,value=${{ matrix.environment }}_${{ matrix.platform }},enable=${{ github.event_name != 'pull_request' }}
-            type=raw,value=${{ matrix.environment }}_${{ matrix.platform }}-staging
-            type=raw,value=${{ matrix.environment }}_${{ matrix.platform }}-latest-pr,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=branch,prefix=${{ matrix.environment }}_${{ matrix.platform }}-
-            type=semver,pattern={{version}},prefix=${{ matrix.environment }}_${{ matrix.platform }}-
-            type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.environment }}_${{ matrix.platform }}-
-            type=semver,pattern={{major}},prefix=${{ matrix.environment }}_${{ matrix.platform }}-
-      
-      - name: format tags
-        id: format_tags
-        run: |
-          echo "formatted_tags=$(echo -e '${{ steps.docker_meta.outputs.tags }}' | tr '\n' ',' | sed 's/[ ,]*$//'| tr -d " " ) " >> $GITHUB_OUTPUT
-
-      - name: Build and push dev container
-        uses: devcontainers/ci@v0.3
-        with:
-          imageName: lcas.lincoln.ac.uk/devcontainer/${{ steps.repo_slug.outputs.result }}
-          push: always
-          configFile: .devcontainer/${{ matrix.environment }}_${{ matrix.platform }}/devcontainer.json
-          imageTag: ${{ steps.format_tags.outputs.formatted_tags }}
-
-      # - name: Build and run dev container task
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   uses: devcontainers/ci@v0.3
-      #   with:
-      #     imageName: lcas.lincoln.ac.uk/devcontainer/lcas/aoc_strawberry_scenario
-      #     push: never
-      #     configFile: .devcontainer/${{ matrix.environment }}_${{ matrix.platform }}/devcontainer.json
-      #     imageTag: ${{ steps.format_tags.outputs.formatted_tags }}
-      #     #runCmd: "echo 'Running in PR'"
-

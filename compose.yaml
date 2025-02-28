@@ -1,0 +1,12 @@
+services:
+  aoc_scenario_base:
+    image: lcas.lincoln.ac.uk/lcas/aoc_scenario_base:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: user_space  # Uses the final target from the multi-stage build
+      cache_from:
+        - type=registry,ref=lcas.lincoln.ac.uk/cache/lcas/aoc_scenario_base:latest
+        - lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
+      args:
+          - BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
