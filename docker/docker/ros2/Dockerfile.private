@@ -1,0 +1,44 @@
+############################################################################################################
+# This stage should only be build if the GITHUB_TOKEN is provided and provides access to all needed 
+# repositories. This is for actual DEPLOYMENT and not for dev environment
+############################################################################################################
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS private
+
+LABEL org.opencontainers.image.licenses="Apache 2.0, MIT, proprietary"
+LABEL org.opencontainers.image.base_image="${BASE_IMAGE}"
+
+# copy entire workspace
+# Copies the contents of the current directory to the specified service directory
+# within the container, setting the ownership to the user specified by the $USER
+# environment variable.
+COPY --chown=$USER . ${AOC_SERVICE_DIR}
+
+WORKDIR ${COLCON_WS}
+
+RUN rm -rf build install log
+
+WORKDIR ${AOC_SERVICE_DIR}
+
+# This Dockerfile snippet performs the following actions:
+# 1. Uses a secret mount to securely access a GitHub token.
+# 2. Configures Git to use the token for authentication with GitHub.
+# 3. Executes a post-creation script located at .devcontainer/docker/ros2/script/post_create.sh.
+# 4. Cleans up by unsetting the Git configuration and removing the .netrc file.
+# RUN --mount=type=secret,id=GITHUB_TOKEN,uid=1001 \
+#     (cp ~/.gitconfig ~/.gitconfig.bak 2>/dev/null || touch ~/.gitconfig.bak ) && \
+#     echo "machine github.com login x password $(head -n 1 /run/secrets/GITHUB_TOKEN)" > ~/.netrc && \
+#     git config \
+#     --global \
+#     url."https://oauth2:$(head -n 1 /run/secrets/GITHUB_TOKEN)@github.com/".insteadOf \
+#     "https://github.com/" && \
+#     bash .devcontainer/docker/ros2/script/checkout_private_repos.sh && \
+#     mv ~/.gitconfig.bak ~/.gitconfig && \
+#     rm -f ~/.netrc
+
+RUN bash .devcontainer/docker/ros2/script/build_workspace.sh
+
+CMD ["/bin/bash"]
+
+
+

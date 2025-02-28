@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=toponav map editor
+Comment=This will run a Python script
+Exec=/usr/bin/python3 /home/ros/aoc_strawberry_scenario_ws/src/aoc_strawberry_scenario/aoc_strawberry_scenario_bringup/scripts/toponav_tool.py
+Icon=/home/ros/aoc_strawberry_scenario_ws/src/aoc_strawberry_scenario/docs/network-topology-icon-vector.jpg
+Terminal=false
+Type=Application
+

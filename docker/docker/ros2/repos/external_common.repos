@@ -1,0 +1,102 @@
+repositories:
+  kindr_humble:
+    type: git
+    url: https://github.com/LCAS/kindr_humble.git
+    version: v0.0.1
+    depth: 1
+  costmap_converter_main:
+    type: git
+    url: https://github.com/rst-tu-dortmund/costmap_converter.git
+    version: 0.1.2
+    depth: 1
+  point_cloud_msg_wrapper:
+      type: git
+      url: https://gitlab.com/ApexAI/point_cloud_msg_wrapper.git
+      version: 0a62affd736fc39744467ff3a68d7e1f6c3d1bb5
+      depth: 1
+      commit: 0a62affd
+  rviz_2d_overlay_plugins:
+      type: git
+      url: https://github.com/teamspatzenhirn/rviz_2d_overlay_plugins.git
+      version: 1.3.0
+      depth: 1
+  trimble_gnss_driver_ros2:
+      type: git
+      url: https://github.com/LCAS/trimble_gnss_driver_ros2.git
+      version: v0.0.2
+      depth: 1
+  livox_ros_driver2:
+      type: git
+      url: https://github.com/LCAS/livox_ros_driver2.git
+      version: v0.0.0
+      depth: 1
+  livox_laser_simulation_ros2:
+      type: git
+      url: https://github.com/LCAS/livox_laser_simulation_ros2
+      version: v0.0.0
+      depth: 1
+  topological_navigation:
+    type: git
+    url: https://github.com/LCAS/topological_navigation.git
+    version: aoc
+    depth: 1
+  decomp_ros:
+    type: git
+    url: https://github.com/LCAS/DecompROS.git
+    version: v0.0.0
+    depth: 1
+  mqtt_ROS2:
+    type: git
+    url: https://github.com/amieo-ra/mqtt_ros2
+    version: main
+    depth: 1
+  gofar_navigation:
+    type: git
+    url: https://github.com/amieo-ra/gofar_navigation
+    version: main
+    depth: 1
+  rasberry_coordination:
+    type: git 
+    url: https://github.com/amieo-ra/rasberry_coordination
+    version: master
+    depth: 1
+  ultralytics_ros:
+    type: git
+    url: https://github.com/LCAS/ultralytics_ros.git
+    version: v0.0.0 
+    depth: 1
+  ros2_zed_multi_camera:
+      type: git
+      url: https://github.com/LCAS/ros2_zed_multi_camera.git
+      version: v0.0.0
+      depth: 1
+  zed-ros2-wrapper:
+      type: git
+      url: https://github.com/LCAS/zed-ros2-wrapper.git
+      version: v0.0.0
+      depth: 1
+  autonomy-metric-logger:
+      type: git
+      url: https://github.com/LCAS/autonomy_metrics_logger.git
+      version: main
+      depth: 1
+  kiss-icp:
+      type: git
+      url: https://github.com/LCAS/kiss-icp.git
+      version: main
+      depth: 1
+  scans_merger:
+      type: git
+      url: https://github.com/LCAS/scans_merger.git
+      version: v0.0.2
+      depth: 1
+  ros2_topic_monitor:
+      type: git
+      url: https://github.com/LCAS/ros2_topic_monitor.git
+      version: main
+      depth: 1
+  tinyspline_ros:
+      type: git
+      url: https://github.com/GPrathap/tinyspline_ros.git
+      version: humble_dev
+      depth: 1

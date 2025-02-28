@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+     <Domain id="0">
+        <General>
+            <AllowMulticast>spdp</AllowMulticast>
+            <!-- <MaxMessageSize>65500B</MaxMessageSize> -->
+            <FragmentSize>20500B</FragmentSize>
+            <!-- <FragmentSize>4000B</FragmentSize> -->
+            <!-- <FragmentSize>10250B</FragmentSize> -->
+            <Transport>udp</Transport>
+            <NetworkInterfaceAddress>wlp0s20f3</NetworkInterfaceAddress>
+        </General>
+        <Internal>
+            <!-- <SocketReceiveBufferSize min="30MB"/> -->
+            <!-- <HeartbeatInterval max="100ms">100ms</HeartbeatInterval> -->
+            <MinimumSocketReceiveBufferSize>20MB</MinimumSocketReceiveBufferSize>
+            <Watermarks>
+                <WhcHigh>500kB</WhcHigh>
+            </Watermarks>
+        </Internal>
+        <Discovery>
+            <!-- <Peers>
+                <Peer address="localhost"/>
+            </Peers> -->
+            <ParticipantIndex>auto</ParticipantIndex>
+            <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+        </Discovery>
+        <!-- <Tracing><Verbosity>severe</Verbosity></Tracing> -->
+        <!-- <Tracing><Verbosity>finest</Verbosity></Tracing> -->
+        <Tracing>
+        <Verbosity>finest</Verbosity>
+        <!-- <OutputFile>cyclonedds.log</OutputFile> -->
+        </Tracing>
+        
+        <!-- <Tracing><Verbosity>none</Verbosity></Tracing> -->
+    </Domain>
+
+    <!-- Domain 1 is used for local lo network in simulation -->
+    <Domain id="1">
+        <General>
+            <AllowMulticast>true</AllowMulticast>
+            <FragmentSize>20500B</FragmentSize>
+            <Transport>udp</Transport>
+            <!-- <NetworkInterfaceAddress>lo</NetworkInterfaceAddress> -->
+            <MaxMessageSize>65500B</MaxMessageSize>
+        </General>
+        <Discovery>
+            <ParticipantIndex>auto</ParticipantIndex>
+            <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+        </Discovery>
+    </Domain>
+
+
+    <Domain id="90">
+        <General>
+            <MaxMessageSize>65500B</MaxMessageSize>
+        </General>
+        <Discovery>
+            <ParticipantIndex>auto</ParticipantIndex>
+            <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+        </Discovery>
+    </Domain>
+
+</CycloneDDS>

@@ -1,0 +1,162 @@
+ {
+
+  // this ID needs to be unique for all the entities in the zenoh-network (peer, router and clients).
+  // If not assigned manually, zenohd assigns a unique id automatically. 
+  "id" : "1",
+
+  // Meta field can have any structure and passed through routers to 
+  // the rest API. For now, it has an info field with information about 
+  // the client (such as name, ip, physical location, sensor_list etc. ). 
+  // this information can be useful in fleet-manager.
+  "metadata" : {
+    "info" : {
+      "name" : "Hunter", 
+      "ip" : "",
+      "location" : "Riseholme", 
+      "sublocation" : "FHU",
+      "sensor_list" : [] ,
+      "namespace" : "/hunter_1"
+    }
+  },
+  "plugins": {
+    "ros2dds": { 
+      // "id": "hunter_1",
+ 
+      "nodename": "zenoh_bridge_ros2dds",
+ 
+      "namespace": "/hunter_1",
+
+      ////
+      //// ros_localhost_only: If set to true, the DDS discovery and traffic will occur only on the localhost interface (127.0.0.1).
+      ////                     By default set to false, unless the "ROS_LOCALHOST_ONLY=1" environment variable is defined.
+      ////
+      "ros_localhost_only": true,
+ 
+      ////
+      //// allow / deny: Specify the lists of ROS 2 interfaces that are allowed or denied to be routed over Zenoh.
+      ////               Each element of the lists is a regular expression that must match the full interface name.
+      ////               You cannot set both 'allow' and 'deny' in the same configuration.
+      ////               If neither 'allow' nor 'deny' are set, all interfaces are allowed.
+      ////               Use 'allow' to allow only the specified interfaces. If an interface type is set to an empty list
+      ////               or is not specified at all, it means that NO such interface is allowed.
+      ////               Use 'deny' to allow all except the specified interfaces. If an interface type is set to an empty list
+      ////               or is not specified at all, it means that ALL such interface are allowed.
+      "allow": {
+        "publishers": [".*/compressed", ".*/laser_scan", "/tf", ".*/pose", "/current_node", "/closest_node", "/closest_edges", "/rosout", "/diagnostics", "/gps_base/.*", "/topological_map_2"],
+        "subscribers": [".*/cmd_vel", "/cmd_vel/joy", "/cmd_vel/nav", "cmd_vel_teleop", "/diff_drive_controller/cmd_vel_unstamped"],
+        "service_servers": [],
+        "service_clients": [],
+        "action_servers": [],
+        "action_clients": []
+      }, 
+      // deny: {
+      //   publishers: ["/rosout", "/parameter_events"],
+      //   subscribers: ["/rosout"],
+      //   service_servers: [".*/set_parameters"],
+      //   service_clients: [".*/set_parameters"],
+      //   action_servers: [],
+      //   action_clients: [],
+      // },
+
+
+      ////
+      //// pub_max_frequencies: Specify a list of maximum frequency of publications routing over zenoh for a set of Publishers.
+      ////                      The strings must have the format "<regex>=<float>":
+      ////                      - "regex" is a regular expression matching a Publisher interface name
+      ////                      - "float" is the maximum frequency in Hertz;
+      ////                        if publication rate is higher, downsampling will occur when routing.
+      "pub_max_frequencies": [".*/compressed=5", "/tf=10", ".*/laser_scan=10", "/gps_base/.*=1"],
+
+      ////
+      //// pub_priorities: Specify a list of priorities of publications routing over zenoh for a set of Publishers.
+      ////                 In case of high traffic, the publications with higher priorities will overtake
+      ////                 the publications with lower priorities in Zenoh publication queues.
+      ////                 The strings must have the format "<regex>=<integer>[:express]":
+      ////                 - "regex" is a regular expression matching a Publisher topic name
+      ////                 - "integer" is a priority value in the range [1-7]. Highest priority is 1, lowest is 7 and default is 5.
+      ////                   (see Zenoh Priority definition here: https://docs.rs/zenoh/latest/zenoh/publication/enum.Priority.html)
+      ////                - ":express" is an option to indicate that the Zenoh express policy must be used for those publications.
+      ////                   The express policy makes Zenoh to to send the message immediatly, not waiting for possible further messages
+      ////                   to create a bigger batch of messages. This usually has a positive impact on latency for the topic
+      ////                   but a negative impact on the general throughput, as more overhead is used for those topics.
+      // pub_priorities: ["/scan=1:express", "/pose=2", "/rosout=7"],
+
+      ////
+      //// reliable_routes_blocking: When true, the publications from a RELIABLE DDS Writer will be
+      ////                           routed to zenoh using the CongestionControl::Block option.
+      ////                           Meaning the routing will be blocked in case of network congestion,
+      ////                           blocking the DDS Reader and the RELIABLE DDS Writer in return.
+      ////                           When false (or for BERST_EFFORT DDS Writers), CongestionControl::Drop
+      ////                           is used, meaning the route might drop some data in case of congestion.
+      ////
+      // reliable_routes_blocking: true,
+
+      ////
+      //// queries_timeout: Timeouts configuration for various Zenoh queries.
+      ////                  Each field is optional. If not set, the 'default' timeout (5.0 seconds by default) applies to all queries.
+      ////                  Each value can be either a float in seconds that will apply as a timeout to all queries,
+      ////                  either a list of strings with format "<regex>=<float>" where:
+      ////                      - "regex" is a regular expression matching an interface name
+      ////                      - "float" is the timeout in seconds
+      "queries_timeout": {
+      //   //// default timeout that will apply to all query, except the ones specified below
+      //   //// in 'transient_local_subscribers', 'services' and 'actions'
+        "default": 600.0, // this is a test value for now!
+      //   //// timeouts for TRANSIENT_LOCAL subscriber when querying publishers for historical publications
+        "transient_local_subscribers": 600.0
+      //   //// timeouts for Service clients calling a Service server
+      //   services: ["add_two_ints=0.5", ".*=1.0"],
+      //   //// timeouts for Action clients calling an Action server (send_goal, cancel_goal and get_result services)
+      //   actions: {
+      //     send_goal: 1.0,
+      //     cancel_goal: 1.0,
+      //     get_result: [".*long_mission=3600", ".*short_action=10.0"],
+      //   }
+      }
+        ////
+      //// This plugin uses Tokio (https://tokio.rs/) for asynchronous programming. 
+      //// When running as a plugin within a Zenoh router, the plugin creates its own Runtime managing 2 pools of threads:
+      ////    - worker threads for non-blocking tasks. Those threads are spawn at Runtime creation.
+      ////    - blocking threads for blocking tasks (e.g. I/O). Those threads are spawn when needed.
+      //// For more details see https://github.com/tokio-rs/tokio/discussions/3858#discussioncomment-869878
+      //// When running as a standalone bridge the Zenoh Session's Runtime is used and can be configured via the
+      //// `ZENOH_RUNTIME` environment variable. See https://docs.rs/zenoh-runtime/latest/zenoh_runtime/enum.ZRuntime.html
+      ////
+      
+      //// work_thread_num: The number of worker thread in the asynchronous runtime will use. (default: 2)
+      ////                  Only for a plugin, no effect on a bridge.
+      // work_thread_num: 2,
+      
+      //// max_block_thread_num: The number of blocking thread in the asynchronous runtime will use. (default: 50)
+      ////                       Only for a plugin, no effect on a bridge.
+      // max_block_thread_num: 50,
+       
+    }
+  },
+  
+  // for robots, it needs to be client (behind NAT)
+  // or if the VPN is used (or WAN port is opened), then 
+  // each robot can either work as a router or peer. 
+  // Client in this case is a end-point.
+  "mode": "client",
+  
+  // List the public IPs (or VPN ips, in case of VPN LAN network) of 
+  // all the routers (i.e., where mode is 'router') 
+  "connect": {
+    "endpoints": [
+      // "<proto>/<ip>:<port>"
+      "tcp/165.232.111.154:7447"
+    ]
+  },
+  
+  // Add a list of all the other routers here. 
+  // for example if the fleet has three robots, 
+  // ideally, it should have more than one router in two remote locations 
+  // so that if one of them go down, the other works as a backup (at least!).
+  "listen": {
+    "endpoints": [
+      // add other routers here. 
+      // "<proto>/<ip>:<port>"
+    ]
+  },
+}
