@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [ main ]
 
+
+env:
+  # set the base image to use for all the builds
+  BASE_IMAGE: lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
+
 # Controls concurrent execution of workflow
 # Ensures only one workflow per branch/ref runs at a time
 # If a new workflow is triggered while one is in progress, the in-progress workflow will be cancelled
@@ -57,7 +62,7 @@ jobs:
         # generate Docker tags based on the following events/attributes
         labels: |
           org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.base=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
+          org.opencontainers.image.base=${{ env.BASE_IMAGE }}
           maintainer=AOC
           com.github.workflow.runner.name=${{ runner.name }}
           com.github.workflow.runner.os=${{ runner.os }}
@@ -88,7 +93,6 @@ jobs:
         cache-to: type=registry,ref=lcas.lincoln.ac.uk/cache/${{ steps.repo_slug.outputs.result }}:latest,mode=max
         tags: ${{ steps.meta_base.outputs.tags }}
         labels: ${{ steps.meta_base.outputs.labels }}
-        target: user_space
         build-args: |
           BUILDKIT_INLINE_CACHE=1
-          BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
+          BASE_IMAGE=${{ env.BASE_IMAGE }}
