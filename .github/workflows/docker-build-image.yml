@@ -3,10 +3,18 @@ name: Build Docker images
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - 'compose.yaml'
     branches: [ main ]
     tags:
       - 'v*'
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - 'compose.yaml'
     branches: [ main ]
 
 
@@ -78,6 +86,9 @@ jobs:
           type=raw,value=latest-pr,enable=${{ github.event_name == 'pull_request' }}
           type=raw,value=staging
           type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: setup buildx
+      uses: docker/setup-buildx-action@v3
 
     - name: Build base Docker Image
       uses: docker/build-push-action@v6
