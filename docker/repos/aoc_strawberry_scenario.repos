@@ -1,9 +1,0 @@
-repositories:
-  aoc_navigation:
-    type: git
-    url: https://github.com/LCAS/aoc_navigation.git
-    version: humble_dev
-  human_detection:
-    type: git
-    url: https://github.com/LCAS/human_detection_rgbd_camera.git
-    version: main
