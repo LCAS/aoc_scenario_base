@@ -57,7 +57,7 @@ jobs:
         # generate Docker tags based on the following events/attributes
         labels: |
           org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.base=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
+          org.opencontainers.image.base=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
           maintainer=AOC
           com.github.workflow.runner.name=${{ runner.name }}
           com.github.workflow.runner.os=${{ runner.os }}
@@ -90,4 +90,4 @@ jobs:
         target: user_space
         build-args: |
           BUILDKIT_INLINE_CACHE=1
-          BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
+          BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0

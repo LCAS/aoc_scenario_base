@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2
+ARG BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
 
 ############################################################################################################
 FROM ${BASE_IMAGE} AS base
