@@ -163,8 +163,10 @@ ENV GIT_LFS_SKIP_SMUDGE=1
 
 # install zed sdk (as the user, because the installer needs to be run as a user)
 
+RUN pip install --upgrade matplotlib pybind11
 # allow writing into /opt/venv by all users
 RUN sudo chmod -R o+r+w+X,g+r+w+X /opt/venv
+
 ENV USER=ros
 USER $USER
 #INCLUDE docker/zed.dockerfile
@@ -206,12 +208,7 @@ USER root
 # This grants the user permissions to access serial ports, video devices, and terminal devices respectively.
 RUN usermod -a -G dialout $USER && \
     usermod -a -G video $USER && \
-    usermod -a -G tty $USER && \
-    mkdir -p ${COLCON_WS}/src/
-
-RUN mkdir -p ${COLCON_WS}
-RUN chown -R $USER:$USER ${COLCON_WS}
-
+    usermod -a -G tty $USER
 
 ############################################################################################################
 FROM base AS user_space
@@ -221,7 +218,7 @@ USER $USER
 
 # tmule configs
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
-    echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc && \
+    echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc
 
 # common aliases
 RUN echo "export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11" >> ~/.bashrc && \
