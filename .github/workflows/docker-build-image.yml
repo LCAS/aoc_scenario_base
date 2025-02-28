@@ -72,6 +72,7 @@ jobs:
           type=semver,pattern={{major}}
           type=raw,value=latest-pr,enable=${{ github.event_name == 'pull_request' }}
           type=raw,value=staging
+          type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build base Docker Image
       uses: docker/build-push-action@v6
