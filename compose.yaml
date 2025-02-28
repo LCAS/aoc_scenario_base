@@ -4,10 +4,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: user_space  # Uses the final target from the multi-stage build
       cache_from:
         - lcas.lincoln.ac.uk/lcas/aoc_scenario_base:latest
         - type=registry,ref=lcas.lincoln.ac.uk/cache/lcas/aoc_scenario_base:latest
         - type=registry,ref=lcas.lincoln.ac.uk/lcas/aoc_scenario_base:latest
       args:
-          - BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
+        - BUILDKIT_INLINE_CACHE=1
+        - BASE_IMAGE=lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
