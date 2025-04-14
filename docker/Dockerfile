@@ -104,6 +104,21 @@ RUN wget -O ~/code-server.tar.gz https://github.com/gitpod-io/openvscode-server/
     tar -xzf ~/code-server.tar.gz -C ~/code-server --strip-components=1 && \
     rm ~/code-server.tar.gz
 
+#Zenoh
+#############################################################################################
+ENV ZENOH_BRIDGE_VERSION=1.3.3
+RUN cd /tmp; \
+    if [ "$(dpkg --print-architecture)" = "arm64" ]; then \
+      curl -L -O https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds/releases/download/${ZENOH_BRIDGE_VERSION}/zenoh-plugin-ros2dds-${ZENOH_BRIDGE_VERSION}-aarch64-unknown-linux-gnu-standalone.zip; \
+    else \
+      curl -L -O https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds/releases/download/${ZENOH_BRIDGE_VERSION}/zenoh-plugin-ros2dds-${ZENOH_BRIDGE_VERSION}-x86_64-unknown-linux-gnu-standalone.zip; \
+    fi; \
+    unzip zenoh-plugin-ros2dds-*.zip && \
+    mv zenoh-bridge-ros2dds /usr/local/bin/ && \
+    chmod +x /usr/local/bin/zenoh-bridge-ros2dds && \
+    ldconfig && \
+    rm -rf zenoh-*
+
 # MongoDB
 ############################################################################################################
 ##================== install mongodb v7.0
@@ -215,6 +230,8 @@ FROM base AS user_space
 
 # switch to the user now
 USER $USER
+
+RUN echo "* The Zenoh ROS2 bridge \`zenoh-bridge-ros2dds\` (version: ${ZENOH_BRIDGE_VERSION})." >> /opt/image/info.md; 
 
 # tmule configs
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
