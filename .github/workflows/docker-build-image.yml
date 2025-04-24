@@ -20,7 +20,7 @@ on:
 
 env:
   # set the base image to use for all the builds
-  BASE_IMAGE: lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.2-humble-2.1.0
+  BASE_IMAGE: lcas.lincoln.ac.uk/lcas/ros-docker-images:jammy-cuda12.1-humble-2.1.1
 
 # Controls concurrent execution of workflow
 # Ensures only one workflow per branch/ref runs at a time
